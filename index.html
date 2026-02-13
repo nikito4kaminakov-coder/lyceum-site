@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Лицей</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root{
+    --green:#1e7f4f;
+    --green-light:#3ddc84;
+    --glass:rgba(255,255,255,0.12);
+}
+
+*{box-sizing:border-box}
+
+body{
+    margin:0;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    background:#0f1f18;
+    overflow:hidden;
+    height:100vh;
+}
+
+.background{
+    position:fixed;
+    inset:0;
+    background:url("school.jpg") center/cover no-repeat;
+    filter:brightness(0.75);
+}
+
+.overlay{
+    position:fixed;
+    inset:0;
+    backdrop-filter:blur(14px);
+    background:linear-gradient(135deg, rgba(30,127,79,0.55), rgba(0,0,0,0.5));
+}
+
+.logo{
+    position:fixed;
+    top:25px;
+    left:25px;
+    width:120px;
+}
+
+.app{
+    position:relative;
+    z-index:2;
+    height:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+
+h1{
+    font-size:64px;
+    color:white;
+    margin-bottom:50px;
+}
+
+.menu{
+    display:flex;
+    gap:20px;
+    flex-wrap:wrap;
+}
+
+.menu button{
+    min-width:260px;
+    padding:18px 28px;
+    border:none;
+    border-radius:28px;
+    font-size:18px;
+    color:white;
+    cursor:pointer;
+    background:linear-gradient(135deg,var(--green),#125c35);
+    transition:.3s;
+}
+
+.menu button:hover{
+    transform:translateY(-4px);
+}
+
+.page{
+    position:absolute;
+    inset:0;
+    padding:120px 100px;
+    overflow:auto;
+    display:none;
+}
+
+.page.active{display:block}
+
+.card{
+    background:var(--glass);
+    backdrop-filter:blur(30px);
+    border-radius:32px;
+    padding:50px;
+    color:white;
+}
+
+.back{
+    position:fixed;
+    top:30px;
+    right:30px;
+    padding:12px 20px;
+    border-radius:20px;
+    border:none;
+    background:var(--green);
+    color:white;
+    cursor:pointer;
+}
+
+/* VK стиль */
+.vk-posts{
+    margin-top:40px;
+    display:flex;
+    flex-direction:column;
+    gap:30px;
+}
+
+.vk-post{
+    background:rgba(0,0,0,0.45);
+    padding:30px;
+    border-radius:25px;
+    backdrop-filter:blur(20px);
+}
+
+.vk-post img{
+    width:100%;
+    border-radius:20px;
+    margin-top:15px;
+}
+
+.vk-date{
+    font-size:14px;
+    opacity:0.6;
+    margin-bottom:10px;
+}
+</style>
+</head>
+<body>
+
+<div class="background"></div>
+<div class="overlay"></div>
+<img src="logo.png" class="logo">
+
+<div class="app" id="mainApp">
+<h1>Добро пожаловать</h1>
+<div class="menu">
+<button onclick="openPage('news')">Новости</button>
+<button onclick="openPage('about')">О школе</button>
+</div>
+</div>
+
+<div id="page" class="page"></div>
+<button class="back" id="backBtn" onclick="closePage()" style="display:none;">Назад</button>
+
+<script>
+const page=document.getElementById("page");
+const main=document.getElementById("mainApp");
+const backBtn=document.getElementById("backBtn");
+
+function openPage(type){
+main.style.display="none";
+page.classList.add("active");
+backBtn.style.display="block";
+page.innerHTML="";
+
+if(type==="news"){
+page.innerHTML=`
+<div class="card">
+<h2>Новости</h2>
+<div id="vk_posts" class="vk-posts"></div>
+</div>`;
+loadVKPosts();
+}
+
+if(type==="about"){
+page.innerHTML=`
+<div class="card">
+<h2>О школе</h2>
+<p>Информация о школе...</p>
+</div>`;
+}
+}
+
+function closePage(){
+page.classList.remove("active");
+page.innerHTML="";
+main.style.display="flex";
+backBtn.style.display="none";
+}
+
+async function loadVKPosts(){
+const container=document.getElementById("vk_posts");
+
+try{
+const response=await fetch(
+"https://api.allorigins.win/raw?url=" +
+encodeURIComponent("https://rsshub.app/vk/group/ldlyceum")
+);
+
+const text=await response.text();
+
+const parser=new DOMParser();
+const xml=parser.parseFromString(text,"text/xml");
+
+const items=xml.querySelectorAll("item");
+
+items.forEach((item,index)=>{
+if(index>=5) return;
+
+const title=item.querySelector("title").textContent;
+const description=item.querySelector("description").textContent;
+const date=new Date(item.querySelector("pubDate").textContent);
+
+container.innerHTML+=`
+<div class="vk-post">
+<div class="vk-date">${date.toLocaleDateString("ru-RU")}</div>
+<div>${description}</div>
+</div>`;
+});
+
+}catch(e){
+container.innerHTML="<p>Ошибка загрузки новостей</p>";
+}
+}
+</script>
+
+</body>
+</html>
